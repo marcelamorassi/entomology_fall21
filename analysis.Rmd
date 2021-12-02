@@ -1,0 +1,39 @@
+---
+title: "analysis"
+author: "Marcela Morassi"
+date: "12/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+SetUp
+```{r}
+library(tidyverse)
+library(dplyr)
+library(vegan)
+library(ggplot2)
+library(RColorBrewer)
+
+setwd("C:/Users/Marcela Morassi/Documents/Github/entomology_fall21")
+
+bfl <- read.csv("data.csv")
+chaparral <- read.csv("chaparral_data.csv")
+```
+
+Data Manipulation
+```{r}
+bfl_coleo <- bfl %>% 
+  filter(order=="Coleoptera") 
+
+chaparral_coleo <- chaparral %>% 
+  filter(order=="Coleoptera")
+
+bfl_coleo %>% group
+  ggplot(aes(x=))
+```
+
+
+
