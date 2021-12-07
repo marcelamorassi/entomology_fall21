@@ -16,6 +16,7 @@ library(dplyr)
 library(vegan)
 library(ggplot2)
 library(RColorBrewer)
+theme_set(theme_classic()) # Set the theme
 
 setwd("C:/Users/Marcela Morassi/Documents/Github/entomology_fall21")
 
@@ -31,9 +32,89 @@ bfl_coleo <- bfl %>%
 chaparral_coleo <- chaparral %>% 
   filter(order=="Coleoptera")
 
-bfl_coleo %>% group
-  ggplot(aes(x=))
+bfl_diptera <- bfl %>% 
+  filter(order=="Diptera")
+
+chaparral_diptera = chaparral %>% 
+  filter(order=="Diptera")
+
+#count data
+bfl_coleo_count = bfl_coleo %>% 
+  group_by(family) %>% 
+  summarise(count = n()) %>% 
+  mutate(site="BFL") %>% 
+  slice_max(order_by = count, n = 15)
+
+bfl_diptera_count = bfl_diptera %>% 
+  group_by(family) %>% 
+  summarise(count = n()) %>% 
+  mutate(site="BFL") %>% 
+  slice_max(order_by = count, n = 15)
+
+chaparral_coleo_count <- chaparral_coleo %>% 
+  group_by(family) %>% 
+  summarise(count = n()) %>% 
+  mutate(site="Chaparral") %>% 
+  slice_max(order_by = count, n = 15)
+
+chaparral_diptera_count = chaparral_diptera %>% 
+  group_by(family) %>% 
+  summarise(count = n()) %>% 
+  mutate(site="Chaparral") %>% 
+  slice_max(order_by = count, n = 15)
+
+#binding coleo counts data
+coleo_counts = rbind(bfl_coleo_count, chaparral_coleo_count) #%>% 
+  #mutate(count = if_else(count <= 0, 0, 1))
+diptera_counts = rbind(bfl_diptera_count, chaparral_diptera_count)
+
 ```
 
+Species Accumulation Curve
+```{r}
+# Create a function that converts a number to presence-absense
+to_presence_absense = function(x) if_else(x <= 0 | is.na(x), 0, 1) # Recodes data as 0 if it's 0 or missing or 1 otherwise
 
+coleo_wide = coleo_counts %>% 
+  pivot_wider(names_from = family, values_from = count, values_fill = 0)
+
+sac_coleo = coleo_wide %>% 
+  specaccum(method = "random", permutations = 500)
+
+sac_coleo_tidy = 
+  tibble(
+    sites = sac_coleo$sites,
+    richness = sac_coleo$richness,
+    se = sac_coleo$sd # the "SD" column is actually a standard error measure
+  ) 
+View(sac_coleo_tidy)
+
+```
+
+Rank Abundance Curve
+```{r}
+plot_rank_abundance = function(data_long2, right_margin = 2.8) {
+  # Make the rank abundance plot
+  # The right_margin argument is used to make sure that 
+  # the angled axis labels don't go of the page
+  # make it larger or smaller to suit your tastes
+  ggplot(data_long2, aes(x = reorder(family,(-count)), y = count)) +
+    geom_line(group = 1) + # Create a descending line
+    scale_y_log10() + # puts y axis on log scale
+    xlab("Family") + ylab("N")+
+    facet_grid(rows = vars(site))+
+    theme(axis.text.x =  # cleans up appearance of x axis labels
+            element_text(angle = -25, hjust = 0.05, # angled, justified text
+                         vjust = 1, face = "italic"), # also in italics
+          # makes sure that the axis labels don't go off the page
+          plot.margin = unit(c(0,right_margin,0,0)+.1, "cm"))
+  # Be sure sure that Species has been coded as a factor, in decreasing order of N!
+}
+
+plot_rank_abundance(coleo_counts)
+ggsave("coleo_fig1.png")
+plot_rank_abundance(diptera_counts)
+ggsave("diptera_fig2.png")
+
+```
 
